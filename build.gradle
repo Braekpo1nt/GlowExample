@@ -15,10 +15,21 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven { 
+        name = "packetevents1"
+        url = uri("https://repo.codemc.io/repository/maven-releases/")
+    }
+
+    maven {
+        name = "packetevents1"
+        url = uri("https://repo.codemc.io/repository/maven-snapshots/") 
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
+
+    compileOnly("com.github.retrooper:packetevents-spigot:2.6.0")
 }
 
 def targetJavaVersion = 21
@@ -38,6 +49,23 @@ tasks.withType(JavaCompile).configureEach {
         options.release.set(targetJavaVersion)
     }
 }
+
+tasks.register('copyJar', Copy) {
+    dependsOn(jar)
+    
+    def sourceDir = file(rootProject.layout.buildDirectory.dir('libs'))
+    def targetDir = file("C:\\Users\\Scott\\Documents\\Programming\\Java\\Minecraft\\Servers\\paper-1_21_1-sandbox\\plugins") // Replace with your desired target directory
+
+    from(sourceDir)
+    into(targetDir)
+    include("*.jar")
+
+    // Overwrite any existing files
+    eachFile { details ->
+        details.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+}
+
 
 processResources {
     def props = [version: version]
