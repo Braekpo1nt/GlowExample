@@ -1,0 +1,4 @@
+name: PacketEventsTutorial
+version: '1.0-SNAPSHOT'
+main: org.braekpo1nt.packetEventsTutorial.PacketEventsTutorial
+api-version: '1.21'
