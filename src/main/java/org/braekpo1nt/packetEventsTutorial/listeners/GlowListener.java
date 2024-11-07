@@ -19,11 +19,13 @@ public class GlowListener implements PacketListener {
         if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_EFFECT)) {
             WrapperPlayServerEntityEffect packet = new WrapperPlayServerEntityEffect(event);
             
-            event.getUser().sendMessage(String.format("type: %s, amplifier: %s, duration: %s, factorData: %s",
+            event.getUser().sendMessage(String.format("type: %s, amplifier: %s, duration: %s, isAmbient: %s, isVisible: %s, isShowIcon: %s",
                     SpigotConversionUtil.toBukkitPotionEffectType(packet.getPotionType()),
                     packet.getEffectAmplifier(),
                     packet.getEffectDurationTicks(),
-                    packet.getFactorData()
+                    packet.isAmbient(),
+                    packet.isVisible(),
+                    packet.isShowIcon()
             ));
         }
     }
