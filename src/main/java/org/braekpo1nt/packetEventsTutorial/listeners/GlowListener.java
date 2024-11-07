@@ -40,13 +40,7 @@ public class GlowListener implements PacketListener {
                         .findFirst()
                         .orElse(null);
                 
-                if (baseEntity == null) {
-                    // If there's no existing flag entry, add a new one with just the glowing effect
-                    byte newFlags = 0x40;
-                    entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, newFlags));
-                    packet.setEntityMetadata(entityMetadata);
-                    plugin.getLogger().info("Added new glowing effect flag (0x40).");
-                } else {
+                if (baseEntity != null) {
                     // Read and modify the existing flags
                     byte flags = (byte) baseEntity.getValue();
                     // Check if glowing bit is set, if not, add it
