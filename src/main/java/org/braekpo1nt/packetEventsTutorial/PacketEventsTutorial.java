@@ -24,11 +24,11 @@ public final class PacketEventsTutorial extends JavaPlugin {
         PacketEvents.getAPI().getEventManager().registerListener(new GlowListener(), PacketListenerPriority.NORMAL);
         PacketEvents.getAPI().init();
         
-        LifecycleEventManager<Plugin> lcManager = this.getLifecycleManager();
-        lcManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Commands commands = event.registrar();
-            commands.register("glow", "glow description", new GlowCommand(this));
-        });
+//        LifecycleEventManager<Plugin> lcManager = this.getLifecycleManager();
+//        lcManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+//            final Commands commands = event.registrar();
+//            commands.register("glow", "glow description", new GlowCommand(this));
+//        });
     }
     
     @Override
