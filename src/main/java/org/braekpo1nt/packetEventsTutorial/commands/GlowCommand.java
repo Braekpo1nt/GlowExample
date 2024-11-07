@@ -13,6 +13,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.braekpo1nt.packetEventsTutorial.PacketEventsTutorial;
 import org.braekpo1nt.packetEventsTutorial.WhoSeesWho;
+import org.braekpo1nt.packetEventsTutorial.listeners.GlowListener;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
@@ -61,24 +62,21 @@ public class GlowCommand implements BasicCommand {
         }
         
         boolean shouldGlow = Boolean.parseBoolean(args[2]);
-        
+        boolean changed;
         if (shouldGlow) {
-            boolean changed = whoSeesWho.show(viewer.getUniqueId(), target.getEntityId());
-            if (changed) {
-                WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
-                        target.getEntityId(), 
-                        Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40)));
-                PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
-            }
+            changed = whoSeesWho.show(viewer.getUniqueId(), target.getUniqueId());
         } else {
-            boolean changed = whoSeesWho.hide(viewer.getUniqueId(), target.getEntityId());
-            if (changed) {
-                WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
-                        target.getEntityId(),
-                        Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x00)));
-                PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
-            }
+            changed = whoSeesWho.hide(viewer.getUniqueId(), target.getUniqueId());
         }
+        
+        if (changed) {
+            WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
+                    target.getEntityId(),
+                    Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, GlowListener.getTrueEntityDataByte(target, shouldGlow))));
+            PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+        }
+        
+        player.sendMessage(whoSeesWho.toComponent(plugin));
         
     }
 }
