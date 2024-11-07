@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Optional;
 
 public class GlowListener implements PacketListener {
     
@@ -34,7 +35,14 @@ public class GlowListener implements PacketListener {
                 WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(event);
                 if (packet.getEntityId() == target.getEntityId()) {
                     List<EntityData> entityMetadata = packet.getEntityMetadata();
+//                    EntityData baseEntity = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0).findFirst().orElse(null);
+//                    if (baseEntity == null) {
+//                        return;
+//                    }
+                    
+                    // set the "has glowing effect" metadata value to true
                     entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte)0x40));
+                    
                     packet.setEntityMetadata(entityMetadata);
                     Bukkit.getLogger().info("modified metadata packet");
                 }

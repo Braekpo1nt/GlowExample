@@ -34,7 +34,7 @@ public class GlowCommand implements BasicCommand {
         }
         
         if (args.length != 2) {
-            player.sendMessage("/glow <playerName> <true|false>");
+            player.sendMessage("/glow <viewer> <target> <true|false>");
             return;
         }
         
