@@ -7,9 +7,7 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.User;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEffect;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
-import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -27,18 +25,7 @@ public class GlowListener implements PacketListener {
     
     @Override
     public void onPacketSend(PacketSendEvent event) {
-        if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_EFFECT)) {
-            WrapperPlayServerEntityEffect packet = new WrapperPlayServerEntityEffect(event);
-            
-            event.getUser().sendMessage(String.format("type: %s, amplifier: %s, duration: %s, isAmbient: %s, isVisible: %s, isShowIcon: %s",
-                    SpigotConversionUtil.toBukkitPotionEffectType(packet.getPotionType()),
-                    packet.getEffectAmplifier(),
-                    packet.getEffectDurationTicks(),
-                    packet.isAmbient(),
-                    packet.isVisible(),
-                    packet.isShowIcon()
-            ));
-        } else if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_METADATA)) {
+        if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_METADATA)) {
             User viewer = event.getUser();
             Player target = Bukkit.getPlayer(TARGET_PLAYER_NAME);
             
