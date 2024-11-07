@@ -43,6 +43,16 @@ public class LeaveJoinListener implements Listener {
                 }
             }
         }, 5L);
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                if (whoSeesWho.shouldSee(player.getUniqueId(), joiningPlayer.getUniqueId())) {
+                    sendPacket(player, joiningPlayer, true);
+                }
+                if (whoSeesWho.shouldSee(joiningPlayer.getUniqueId(), player.getUniqueId())) {
+                    sendPacket(joiningPlayer, player, true);
+                }
+            }
+        }, 20L);
     }
     
     private void sendPacket(Player viewer, Player target, boolean glowing) {

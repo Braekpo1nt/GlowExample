@@ -51,16 +51,11 @@ public class GlowListener implements PacketListener {
                         .orElse(null);
                 
                 if (baseEntity != null) {
-                    // Read and modify the existing flags
                     byte flags = (byte) baseEntity.getValue();
-                    // Check if glowing bit is set, if not, add it
-                    boolean isGlowing = (flags & 0x40) != 0;
-                    if (!isGlowing) {
-                        flags |= 0x40;
-                        baseEntity.setValue(flags);
-                        packet.setEntityMetadata(entityMetadata);
-                        plugin.getLogger().info("Updated flags with glowing effect: " + flags);
-                    }
+                    flags |= (byte) 0x40;
+                    baseEntity.setValue(flags);
+                    packet.setEntityMetadata(entityMetadata);
+                    plugin.getLogger().info("Updated flags with glowing effect: " + flags);
                 }
             }
         }
