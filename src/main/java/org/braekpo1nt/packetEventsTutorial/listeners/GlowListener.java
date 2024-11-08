@@ -1,6 +1,8 @@
 package org.braekpo1nt.packetEventsTutorial.listeners;
 
 import com.github.retrooper.packetevents.event.*;
+import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
+import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
@@ -11,6 +13,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -54,6 +57,14 @@ public class GlowListener implements PacketListener, Listener {
             if (targetUUID == null) {
                 return;
             }
+            List<EntityData> entityMetadata = packet.getEntityMetadata();
+            EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0).findFirst().orElse(null);
+            if (baseEntityData == null) {
+                entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
+            } else {
+                baseEntityData.setValue(((byte) baseEntityData.getValue()) | 0x40);
+            }
+            packet.setEntityMetadata(entityMetadata); // TODO: make sure this is needed
             plugin.getLogger().info("viewer is contained");
         }
     }
