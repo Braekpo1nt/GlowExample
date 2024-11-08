@@ -8,8 +8,6 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.braekpo1nt.packetEventsTutorial.commands.GlowCommand;
 import org.braekpo1nt.packetEventsTutorial.listeners.GlowListener;
-import org.braekpo1nt.packetEventsTutorial.listeners.LeaveJoinListener;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,21 +21,15 @@ public final class PacketEventsTutorial extends JavaPlugin {
     
     @Override
     public void onEnable() {
-        WhoSeesWho whoSeesWho = new WhoSeesWho();
-        EntityMapper mapper = new EntityMapper();
-        for (Player player : getServer().getOnlinePlayers()) {
-            mapper.map(player.getUniqueId(), player.getEntityId());
-        }
-        new LeaveJoinListener(this, mapper, whoSeesWho);
         
-        PacketEvents.getAPI().getEventManager().registerListener(new GlowListener(this, whoSeesWho, mapper), PacketListenerPriority.NORMAL);
+        PacketEvents.getAPI().getEventManager().registerListener(new GlowListener(this), PacketListenerPriority.NORMAL);
         PacketEvents.getAPI().init();
         
         
         LifecycleEventManager<Plugin> lcManager = this.getLifecycleManager();
         lcManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
-            commands.register("glow", "glow description", new GlowCommand(this, whoSeesWho));
+            commands.register("glow", "glow description", new GlowCommand(this));
         });
     }
     
