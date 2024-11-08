@@ -49,7 +49,8 @@ public class GlowListener implements PacketListener, Listener {
     @Override
     public void onPacketSend(PacketSendEvent event) {
         if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_METADATA)) {
-            if (!plugin.getWhoSeesWho().containsViewer(event.getUser().getUUID())) {
+            UUID viewerUUID = event.getUser().getUUID();
+            if (!plugin.getWhoSeesWho().containsViewer(viewerUUID)) {
                 return;
             }
             WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(event);
@@ -57,12 +58,17 @@ public class GlowListener implements PacketListener, Listener {
             if (targetUUID == null) {
                 return;
             }
+            if (!plugin.getWhoSeesWho().canSee(viewerUUID, targetUUID)) {
+                return;
+            }
             List<EntityData> entityMetadata = packet.getEntityMetadata();
-            EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0).findFirst().orElse(null);
+            EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
             if (baseEntityData == null) {
                 entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
             } else {
-                baseEntityData.setValue(((byte) baseEntityData.getValue()) | 0x40);
+                byte flags = (byte) baseEntityData.getValue();
+                flags |= (byte) 0x40;
+                baseEntityData.setValue(flags);
             }
             packet.setEntityMetadata(entityMetadata); // TODO: make sure this is needed
             plugin.getLogger().info("viewer is contained");
