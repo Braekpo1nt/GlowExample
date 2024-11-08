@@ -1,4 +1,4 @@
-package org.braekpo1nt.packetEventsTutorial.commands;
+package org.braekpo1nt.glowexample.commands;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
@@ -8,7 +8,7 @@ import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.braekpo1nt.packetEventsTutorial.PacketEventsTutorial;
+import org.braekpo1nt.glowexample.GlowExample;
 import org.bukkit.entity.Player;
 
 import java.util.Collections;
@@ -16,9 +16,9 @@ import java.util.Collections;
 
 public class GlowCommand implements BasicCommand {
     
-    private final PacketEventsTutorial plugin;
+    private final GlowExample plugin;
     
-    public GlowCommand(PacketEventsTutorial plugin) {
+    public GlowCommand(GlowExample plugin) {
         this.plugin = plugin;
     }
     
@@ -62,7 +62,7 @@ public class GlowCommand implements BasicCommand {
             changed = plugin.getWhoSeesWho().hide(viewer.getUniqueId(), target.getUniqueId());
         }
         if (changed) {
-            byte trueEntityDataByte = PacketEventsTutorial.getTrueEntityDataByte(target, shouldGlow);
+            byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, shouldGlow);
             WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
                     target.getEntityId(),
                     Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))

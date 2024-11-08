@@ -1,4 +1,4 @@
-package org.braekpo1nt.packetEventsTutorial;
+package org.braekpo1nt.glowexample;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListenerPriority;
@@ -9,8 +9,8 @@ import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import org.braekpo1nt.packetEventsTutorial.commands.GlowCommand;
-import org.braekpo1nt.packetEventsTutorial.listeners.GlowListener;
+import org.braekpo1nt.glowexample.commands.GlowCommand;
+import org.braekpo1nt.glowexample.listeners.GlowListener;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -19,10 +19,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
-import java.util.UUID;
 
-public final class PacketEventsTutorial extends JavaPlugin {
+public final class GlowExample extends JavaPlugin {
     
     private final WhoSeesWho whoSeesWho = new WhoSeesWho();
     
@@ -57,7 +55,7 @@ public final class PacketEventsTutorial extends JavaPlugin {
             for (Player target : onlinePlayers) {
                 if (whoSeesWho.canSee(viewer.getUniqueId(), target.getUniqueId())) {
                     whoSeesWho.hide(viewer.getUniqueId(), target.getUniqueId());
-                    byte trueEntityDataByte = PacketEventsTutorial.getTrueEntityDataByte(target, false);
+                    byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, false);
                     WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
                             target.getEntityId(),
                             Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))

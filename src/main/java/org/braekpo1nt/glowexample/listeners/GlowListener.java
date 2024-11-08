@@ -1,4 +1,4 @@
-package org.braekpo1nt.packetEventsTutorial.listeners;
+package org.braekpo1nt.glowexample.listeners;
 
 import com.github.retrooper.packetevents.event.PacketListener;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
@@ -7,7 +7,7 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
-import org.braekpo1nt.packetEventsTutorial.PacketEventsTutorial;
+import org.braekpo1nt.glowexample.GlowExample;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -20,11 +20,11 @@ import java.util.UUID;
 
 public class GlowListener implements PacketListener, Listener {
     
-    private final PacketEventsTutorial plugin;
+    private final GlowExample plugin;
     private final Map<Integer, UUID> mapper = new HashMap<>();
     
     
-    public GlowListener(PacketEventsTutorial plugin) {
+    public GlowListener(GlowExample plugin) {
         this.plugin = plugin;
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             mapper.put(player.getEntityId(), player.getUniqueId());

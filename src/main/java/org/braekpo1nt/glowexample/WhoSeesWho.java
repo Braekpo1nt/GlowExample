@@ -1,4 +1,4 @@
-package org.braekpo1nt.packetEventsTutorial;
+package org.braekpo1nt.glowexample;
 
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;

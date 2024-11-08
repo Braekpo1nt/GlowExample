@@ -1,4 +1,4 @@
- package org.braekpo1nt.packetEventsTutorial;
+ package org.braekpo1nt.glowexample;
 
 import org.jetbrains.annotations.NotNull;
 
