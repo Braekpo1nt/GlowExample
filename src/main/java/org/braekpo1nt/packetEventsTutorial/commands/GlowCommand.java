@@ -67,7 +67,7 @@ public class GlowCommand implements BasicCommand {
                     target.getEntityId(),
                     Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))
             );
-            PacketEvents.getAPI().getProtocolManager().sendPacket(viewer, packet);
+            PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
         }
     }
 }
