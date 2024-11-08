@@ -33,4 +33,8 @@ public class Viewer {
     public boolean hide(UUID target) {
         return targets.remove(target);
     }
+    
+    public @NotNull Set<UUID> getTargets() {
+        return targets;
+    }
 }

@@ -71,8 +71,8 @@ public class GlowListener implements PacketListener, Listener {
                 flags |= (byte) 0x40;
                 baseEntityData.setValue(flags);
             }
-            packet.setEntityMetadata(entityMetadata); // TODO: make sure this is needed
-            plugin.getLogger().info("viewer is contained");
+//            packet.setEntityMetadata(entityMetadata); // TODO: make sure this is needed
+            plugin.getLogger().info("glow packet modified");
         }
     }
     

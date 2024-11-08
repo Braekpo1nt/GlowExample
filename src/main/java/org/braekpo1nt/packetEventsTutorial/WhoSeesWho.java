@@ -7,11 +7,9 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class WhoSeesWho {
     private final Map<UUID, Viewer> viewers = new HashMap<>();
@@ -61,5 +59,13 @@ public class WhoSeesWho {
                 packet.setEntityMetadata(entityMetadata);
             }
         }
+    }
+    
+    public @Nullable Set<UUID> getTargets(@NotNull UUID viewerUUID) {
+        Viewer viewer = viewers.get(viewerUUID);
+        if (viewer == null) {
+            return null;
+        }
+        return viewer.getTargets();
     }
 }
