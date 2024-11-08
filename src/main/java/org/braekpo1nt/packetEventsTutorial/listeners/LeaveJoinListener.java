@@ -25,7 +25,7 @@ public class LeaveJoinListener implements Listener {
         this.mapper = mapper;
         this.whoSeesWho = whoSeesWho;
         this.plugin = plugin;
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+//        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
     
     @EventHandler

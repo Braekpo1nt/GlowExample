@@ -36,4 +36,17 @@ public class EntityMapper {
     public @Nullable Integer getEntityID(@NotNull UUID uuid) {
         return uuidToEntityID.get(uuid);
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder(uuidToEntityID.size());
+        builder.append(" entries:\n");
+        for (Map.Entry<UUID, Integer> entry : uuidToEntityID.entrySet()) {
+            builder.append(entry.getKey())
+                    .append(" -> ")
+                    .append(entry.getValue())
+                    .append("\n");
+        }
+        return builder.toString();
+    }
 }

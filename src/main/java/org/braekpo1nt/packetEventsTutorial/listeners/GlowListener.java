@@ -1,19 +1,24 @@
 package org.braekpo1nt.packetEventsTutorial.listeners;
 
-import com.github.retrooper.packetevents.event.PacketListener;
-import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.*;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnPlayer;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.braekpo1nt.packetEventsTutorial.EntityMapper;
 import org.braekpo1nt.packetEventsTutorial.PacketEventsTutorial;
 import org.braekpo1nt.packetEventsTutorial.WhoSeesWho;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +34,36 @@ public class GlowListener implements PacketListener {
         this.mapper = mapper;
     }
     
+//    @Override
+//    public void onUserConnect(UserConnectEvent event) {
+//        plugin.getLogger().info("onUserConnect ");
+////        mapper.map(event.getUser().getUUID(), event.getUser().getEntityId());
+//    }
+    
+    @Override
+    public void onUserLogin(UserLoginEvent event) {
+        Player joiningPlayer = event.getPlayer();
+        plugin.getLogger().info(String.format("LOGIN_EVENT: %s\n%s", joiningPlayer.getName(), mapper));
+        mapper.map(event.getUser().getUUID(), event.getUser().getEntityId());
+        
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            if (whoSeesWho.shouldSee(player.getUniqueId(), joiningPlayer.getUniqueId())) {
+                sendPacket(player, joiningPlayer, true);
+            }
+            if (whoSeesWho.shouldSee(joiningPlayer.getUniqueId(), player.getUniqueId())) {
+                sendPacket(joiningPlayer, player, true);
+            }
+        }
+    }
+    
+    private void sendPacket(Player viewer, Player target, boolean glowing) {
+        WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
+                target.getEntityId(),
+                Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, GlowListener.getTrueEntityDataByte(target, glowing))));
+        PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+        plugin.getLogger().info(String.format("viewer: %s, target: %s, glowing: %s", viewer.getName(), target.getName(), glowing));
+    }
+    
     @Override
     public void onPacketSend(PacketSendEvent event) {
         if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_METADATA)) {
@@ -36,6 +71,7 @@ public class GlowListener implements PacketListener {
             if (!whoSeesWho.contains(viewer.getUUID())) {
                 return;
             }
+            plugin.getLogger().info(String.format("ENTITY_METADATA: %s", mapper));
             
             // Check if the packet is about the target player
             WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(event);
