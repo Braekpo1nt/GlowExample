@@ -21,7 +21,7 @@ repositories {
     }
 
     maven {
-        name = "packetevents1"
+        name = "packetevents2"
         url = uri("https://repo.codemc.io/repository/maven-snapshots/") 
     }
 }
