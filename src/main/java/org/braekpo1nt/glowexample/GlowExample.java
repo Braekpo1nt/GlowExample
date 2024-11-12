@@ -37,9 +37,15 @@ public final class GlowExample extends JavaPlugin {
     @Override
     public void onEnable() {
         
+        /*
+         * this doesn't have to be registered before the init() method. The example just does it
+         * because the init method might already trigger some events, and they don't want to miss them in
+         * their particular listener. 
+         * 
+         * you can also unregister them
+         */
         PacketEvents.getAPI().getEventManager().registerListener(new GlowListener(this), PacketListenerPriority.NORMAL);
         PacketEvents.getAPI().init();
-        
         
         LifecycleEventManager<Plugin> lcManager = this.getLifecycleManager();
         lcManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
