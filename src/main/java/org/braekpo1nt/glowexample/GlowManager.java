@@ -22,11 +22,11 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
         /**
          * UUIDs of entities which this player should appear to glow to
          */
-        private final Set<Player> viewers = new HashSet<>();
+        private final Set<UUID> viewers = new HashSet<>();
         /**
          * UUIDs of entities that should appear to glow to this player
          */
-        private final Set<Player> targets = new HashSet<>();
+        private final Set<UUID> targets = new HashSet<>();
     }
     
     /**
@@ -45,7 +45,8 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
         for (PlayerData playerData : playerDatas.values()) {
             Player target = playerData.getPlayer();
             List<EntityData> entityMetadata = getEntityMetadata(target, false);
-            for (Player viewer : playerData.getViewers()) {
+            for (UUID viewerUUID : playerData.getViewers()) {
+                Player viewer = playerDatas.get(viewerUUID).getPlayer();
                 sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
             }
         }
@@ -107,9 +108,9 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
             return;
         }
         Player target = targetPlayerData.getPlayer();
-        viewerPlayerData.getTargets().add(target);
+        viewerPlayerData.getTargets().add(target.getUniqueId());
         Player viewer = viewerPlayerData.getPlayer();
-        targetPlayerData.getViewers().add(viewer);
+        targetPlayerData.getViewers().add(viewer.getUniqueId());
         
         List<EntityData> entityMetadata = getEntityMetadata(target, true);
         sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
@@ -137,8 +138,8 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
         Player target = targetPlayerData.getPlayer();
         Player viewer = viewerPlayerData.getPlayer();
         
-        viewerPlayerData.getTargets().remove(target);
-        targetPlayerData.getViewers().remove(viewer);
+        viewerPlayerData.getTargets().remove(target.getUniqueId());
+        targetPlayerData.getViewers().remove(viewer.getUniqueId());
         
         List<EntityData> entityMetadata = getEntityMetadata(target, false);
         sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
@@ -161,17 +162,19 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
         List<EntityData> removedPlayerMetadata = getEntityMetadata(removedPlayer, false);
         // removed player should no longer glow. iterate through viewers
         // and update their packets:
-        for (Player viewer : removedPlayerData.getViewers()) {
-            PlayerData viewerPlayerData = playerDatas.get(viewer.getUniqueId());
-            viewerPlayerData.getTargets().remove(removedPlayer);
+        for (UUID viewerUUID : removedPlayerData.getViewers()) {
+            PlayerData viewerPlayerData = playerDatas.get(viewerUUID);
+            Player viewer = viewerPlayerData.getPlayer();
+            viewerPlayerData.getTargets().remove(removedPlayer.getUniqueId());
             sendGlowingPacket(viewer, removedPlayer.getEntityId(), removedPlayerMetadata);
         }
         
         // removed player should no longer see glowing. iterate through targets
         // and update their packets:
-        for (Player target : removedPlayerData.getTargets()) {
-            PlayerData targetPlayerData = playerDatas.get(target.getUniqueId());
-            targetPlayerData.getViewers().remove(removedPlayer);
+        for (UUID targetUUID : removedPlayerData.getTargets()) {
+            PlayerData targetPlayerData = playerDatas.get(targetUUID);
+            Player target = targetPlayerData.getPlayer();
+            targetPlayerData.getViewers().remove(removedPlayer.getUniqueId());
             List<EntityData> targetMetadata = getEntityMetadata(target, false);
             sendGlowingPacket(removedPlayer, target.getEntityId(), targetMetadata);
         }
@@ -194,12 +197,7 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
                 // if the packet entity is not in the mapper, then it's a player in this manager, and we don't need to proceed
                 return;
             }
-            PlayerData targetPlayerData = playerDatas.get(targetUUID);
-            if (targetPlayerData == null) {
-                // if the target is not in this manager, then do not proceed
-                return;
-            }
-            if (!viewerPlayerData.getTargets().contains(targetPlayerData.getPlayer())) {
+            if (!viewerPlayerData.getTargets().contains(targetUUID)) {
                 // if the viewer can't see the target's glow effect, then do not proceed
                 return;
             }
