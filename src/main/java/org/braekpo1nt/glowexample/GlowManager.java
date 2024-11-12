@@ -2,6 +2,7 @@ package org.braekpo1nt.glowexample;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.*;
+import com.github.retrooper.packetevents.event.simple.PacketPlaySendEvent;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
@@ -16,12 +17,12 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class GlowManager implements PacketListener {
+public class GlowManager extends SimplePacketListenerAbstract {
     
     private final Logger logger;
-    private @Nullable PacketListenerCommon packetListenerCommon;
     
     public GlowManager(Logger logger) {
+        super(PacketListenerPriority.NORMAL);
         this.logger = logger;
     }
     
@@ -46,13 +47,11 @@ public class GlowManager implements PacketListener {
     private final Map<UUID, PlayerData> playerDatas = new HashMap<>();
     
     public void start() {
-        packetListenerCommon = PacketEvents.getAPI().getEventManager().registerListener(this, PacketListenerPriority.NORMAL);
+        PacketEvents.getAPI().getEventManager().registerListener(this);
     }
     
     public void stop() {
-        if (packetListenerCommon != null) {
-            PacketEvents.getAPI().getEventManager().unregisterListener(packetListenerCommon);
-        }
+        PacketEvents.getAPI().getEventManager().unregisterListener(this);
         for (PlayerData playerData : playerDatas.values()) {
             Player target = playerData.getPlayer();
             List<EntityData> entityMetadata = getEntityMetadata(target, false);
@@ -204,7 +203,7 @@ public class GlowManager implements PacketListener {
     }
     
     @Override
-    public void onPacketSend(PacketSendEvent event) {
+    public void onPacketPlaySend(PacketPlaySendEvent event) {
         if (event.getPacketType().equals(PacketType.Play.Server.ENTITY_METADATA)) {
             UUID viewerUUID = event.getUser().getUUID();
             PlayerData viewerPlayerData = playerDatas.get(viewerUUID);
