@@ -74,6 +74,13 @@ public final class GlowExample extends JavaPlugin {
         PacketEvents.getAPI().terminate();
     }
     
+    /**
+     * 
+     * @param entity the entity to get the data for
+     * @param glowing whether the entity should be glowing
+     * @return a base entity metadata byte containing the flags representing the
+     * given entity's true state, but with the given glowing flag.
+     */
     public static byte getTrueEntityDataByte(Entity entity, boolean glowing) {
         byte flags = 0x00;
         

@@ -1,5 +1,6 @@
 package org.braekpo1nt.glowexample.listeners;
 
+import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.event.PacketListener;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.event.UserLoginEvent;
@@ -11,12 +12,10 @@ import org.braekpo1nt.glowexample.GlowExample;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class GlowListener implements PacketListener, Listener {
     
@@ -42,16 +41,58 @@ public class GlowListener implements PacketListener, Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
     
-    /**
-     * Map the logging-in player's entity id to their UUID in the {@link #mapper}
-     * @param event the event
+    /*
+     * there are two options for updating the mapping when the player joins. 
+     * Option 1: using the onUserLogin from PacketListener
+     * this is cleaner because it happens before the first ENTITY_METADATA packet
+     * is sent for the player, so you don't have to update the viewing players
+     * with a custom sent packet.
+     * 
+     * Option 2: using PlayerJoinEvent
+     * 
      */
-    @Override
-    public void onUserLogin(UserLoginEvent event) {
-        Player player = event.getPlayer();
-        mapper.put(player.getEntityId(), player.getUniqueId());
-        plugin.getLogger().info(String.format("Login: added mapping for %s->%s", player.getEntityId(), player.getUniqueId()));
+    
+    // Alternate option 1 - using onUserLogin from PacketListener start
+//    /**
+//     * Map the logging-in player's entity id to their UUID in the {@link #mapper}
+//     * @param event the event
+//     */
+//    @Override
+//    public void onUserLogin(UserLoginEvent event) {
+//        Player player = event.getPlayer();
+//        mapper.put(player.getEntityId(), player.getUniqueId());
+//        plugin.getLogger().info(String.format("Login: added mapping for %s->%s", player.getEntityId(), player.getUniqueId()));
+//    }
+    // Alternate option 1 - using onUserLogin from PacketListener end
+    
+    // Alternate option 2 - using player join event start
+    @EventHandler
+    public void onUserConnect(PlayerJoinEvent event) {
+        Player target = event.getPlayer();
+        mapper.put(target.getEntityId(), target.getUniqueId());
+        plugin.getLogger().info(String.format("Login: added mapping for %s->%s", target.getEntityId(), target.getUniqueId()));
+        
+        byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, true);
+        List<EntityData> entityMetadata = Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte));
+        for (Player viewer : plugin.getServer().getOnlinePlayers()) {
+            if (plugin.getWhoSeesWho().canSee(viewer.getUniqueId(), target.getUniqueId())) {
+                sendGlowingPacket(viewer, target, entityMetadata);
+            }
+        }
     }
+    
+    private static void sendGlowingPacket(Player viewer, Player target, List<EntityData> entityMetadata) {
+        WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
+                target.getEntityId(),
+                entityMetadata
+        );
+        PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+        // you can send the packet silently if you notice that the update of the mapping
+        // is happening too slowly and the user joins as not glowing (and then crouching
+        // updates the glowing
+//        PacketEvents.getAPI().getPlayerManager().sendPacketSilently(viewer, packet);
+    }
+    // Alternate option 2 - using player join event end
     
     /**
      * Remove the existing mapping of the player's entity id from the {@link #mapper}
