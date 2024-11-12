@@ -30,7 +30,7 @@ public final class GlowExample extends JavaPlugin implements Listener {
     
     @Getter
     private final WhoSeesWho whoSeesWho = new WhoSeesWho();
-    private final GlowManager glowManager = new GlowManager();
+    private final GlowManager glowManager = new GlowManager(this.getLogger());
     
     @Override
     public void onLoad() {

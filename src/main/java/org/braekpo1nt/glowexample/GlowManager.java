@@ -7,14 +7,21 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import lombok.Data;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GlowManager implements PacketListener {
+    
+    private final Logger logger;
+    
+    public GlowManager(Logger logger) {
+        
+        this.logger = logger;
+    }
     
     @Data
     private static class PlayerData {
@@ -214,16 +221,12 @@ public class GlowManager implements PacketListener {
                 return;
             }
             // at this point, we're making changes to the packet, so mark it to be re-encoded
-            event.markForReEncode(true);
             List<EntityData> entityMetadata = packet.getEntityMetadata();
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
-            if (baseEntityData == null) {
-                // if there is no existing base entity data, then we just need to add ours with the "glowing"
-                // flag set to true (hence index zero set to 0x40)
-                entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
-            } else {
-                // if the base entity data is included in this packet, we need to make sure that the "glowing"
-                // flag is set to true
+            if (baseEntityData != null) {
+                event.markForReEncode(true);
+                // if the base entity data is included in this packet, 
+                // we need to make sure that the "glowing" flag is set to true
                 byte flags = (byte) baseEntityData.getValue();
                 flags |= (byte) 0x40;
                 baseEntityData.setValue(flags);
@@ -231,7 +234,7 @@ public class GlowManager implements PacketListener {
         }
     }
     
-    private static void logUIError(String message, Object... args) {
-        Bukkit.getLogger().log(Level.WARNING, "[GlowExample] Error occurred in the UI. Failing gracefully.", new Exception(String.format(message, args)));
+    private void logUIError(String message, Object... args) {
+        logger.log(Level.WARNING, "[GlowExample] Error occurred in the UI. Failing gracefully.", new Exception(String.format(message, args)));
     }
 }
