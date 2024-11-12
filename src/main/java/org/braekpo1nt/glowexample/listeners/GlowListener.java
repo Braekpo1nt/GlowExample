@@ -62,6 +62,8 @@ public class GlowListener implements PacketListener, Listener {
             if (!plugin.getWhoSeesWho().canSee(viewerUUID, targetUUID)) {
                 return;
             }
+            // at this point, we're making changes to the packet, so mark it to be re-encoded
+            event.markForReEncode(true);
             List<EntityData> entityMetadata = packet.getEntityMetadata();
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
             if (baseEntityData == null) {
@@ -71,7 +73,6 @@ public class GlowListener implements PacketListener, Listener {
                 flags |= (byte) 0x40;
                 baseEntityData.setValue(flags);
             }
-//            packet.setEntityMetadata(entityMetadata); // TODO: make sure this is needed
             plugin.getLogger().info("glow packet modified");
         }
     }
