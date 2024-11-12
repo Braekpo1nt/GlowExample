@@ -9,6 +9,8 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEn
 import lombok.Data;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -17,9 +19,9 @@ import java.util.logging.Logger;
 public class GlowManager implements PacketListener {
     
     private final Logger logger;
+    private @Nullable PacketListenerCommon packetListenerCommon;
     
     public GlowManager(Logger logger) {
-        
         this.logger = logger;
     }
     
@@ -44,11 +46,13 @@ public class GlowManager implements PacketListener {
     private final Map<UUID, PlayerData> playerDatas = new HashMap<>();
     
     public void start() {
-        PacketEvents.getAPI().getEventManager().registerListener(this, PacketListenerPriority.NORMAL);
+        packetListenerCommon = PacketEvents.getAPI().getEventManager().registerListener(this, PacketListenerPriority.NORMAL);
     }
     
     public void stop() {
-        PacketEvents.getAPI().getEventManager().unregisterListener(this.asAbstract(PacketListenerPriority.NORMAL));
+        if (packetListenerCommon != null) {
+            PacketEvents.getAPI().getEventManager().unregisterListener(packetListenerCommon);
+        }
         for (PlayerData playerData : playerDatas.values()) {
             Player target = playerData.getPlayer();
             List<EntityData> entityMetadata = getEntityMetadata(target, false);
@@ -197,12 +201,6 @@ public class GlowManager implements PacketListener {
             List<EntityData> targetMetadata = getEntityMetadata(target, false);
             sendGlowingPacket(removedPlayer, target.getEntityId(), targetMetadata);
         }
-    }
-    
-    
-    @Override
-    public PacketListenerAbstract asAbstract(PacketListenerPriority priority) {
-        return PacketListener.super.asAbstract(priority);
     }
     
     @Override
