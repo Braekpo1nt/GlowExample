@@ -55,19 +55,10 @@ public class GlowCommand implements BasicCommand {
         }
         
         boolean shouldGlow = Boolean.parseBoolean(args[2]);
-        boolean changed;
         if (shouldGlow) {
-            changed = plugin.getWhoSeesWho().show(viewer.getUniqueId(), target.getUniqueId());
+            plugin.showGlowing(viewer.getUniqueId(), target.getUniqueId());
         } else {
-            changed = plugin.getWhoSeesWho().hide(viewer.getUniqueId(), target.getUniqueId());
-        }
-        if (changed) {
-            byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, shouldGlow);
-            WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
-                    target.getEntityId(),
-                    Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))
-            );
-            PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+            plugin.hideGlowing(viewer.getUniqueId(), target.getUniqueId());
         }
     }
 }

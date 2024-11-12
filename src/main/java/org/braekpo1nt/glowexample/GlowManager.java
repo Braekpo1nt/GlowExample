@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.logging.Level;
 
-public class GlowManager extends PacketListenerCommon implements PacketListener {
+public class GlowManager implements PacketListener {
     
     @Data
     private static class PlayerData {
@@ -36,12 +36,12 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
     private final Map<Integer, UUID> mapper = new HashMap<>();
     private final Map<UUID, PlayerData> playerDatas = new HashMap<>();
     
-    public GlowManager() {
+    public void start() {
         PacketEvents.getAPI().getEventManager().registerListener(this, PacketListenerPriority.NORMAL);
     }
     
     public void stop() {
-        PacketEvents.getAPI().getEventManager().unregisterListener(this);
+//        PacketEvents.getAPI().getEventManager().unregisterListener(this);
         for (PlayerData playerData : playerDatas.values()) {
             Player target = playerData.getPlayer();
             List<EntityData> entityMetadata = getEntityMetadata(target, false);
@@ -107,10 +107,17 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
             logUIError("Target player with UUID %s is not in this manager", targetUUID);
             return;
         }
+        
+        if (viewerPlayerData.getTargets().contains(targetUUID)) {
+            logUIError("Viewer with UUID %s can already see target with UUID %s glowing", viewerUUID, targetUUID);
+            return;
+        }
+        // (no need to check the viewers because they are maintained in tandem)
+        
         Player target = targetPlayerData.getPlayer();
-        viewerPlayerData.getTargets().add(target.getUniqueId());
         Player viewer = viewerPlayerData.getPlayer();
-        targetPlayerData.getViewers().add(viewer.getUniqueId());
+        viewerPlayerData.getTargets().add(targetUUID);
+        targetPlayerData.getViewers().add(viewerUUID);
         
         List<EntityData> entityMetadata = getEntityMetadata(target, true);
         sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
@@ -135,11 +142,16 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
             return;
         }
         
+        if (!viewerPlayerData.getTargets().contains(targetUUID)) {
+            logUIError("Viewer with UUID %s doesn't see target with UUID %s glowing", viewerUUID, targetUUID);
+            return;
+        }
+        // (no need to check the viewers because they are maintained in tandem)
+        
         Player target = targetPlayerData.getPlayer();
         Player viewer = viewerPlayerData.getPlayer();
-        
-        viewerPlayerData.getTargets().remove(target.getUniqueId());
-        targetPlayerData.getViewers().remove(viewer.getUniqueId());
+        viewerPlayerData.getTargets().remove(targetUUID);
+        targetPlayerData.getViewers().remove(viewerUUID);
         
         List<EntityData> entityMetadata = getEntityMetadata(target, false);
         sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
@@ -220,6 +232,6 @@ public class GlowManager extends PacketListenerCommon implements PacketListener 
     }
     
     private static void logUIError(String message, Object... args) {
-        Bukkit.getLogger().log(Level.WARNING, "[GlowExample] " + String.format(message, args), new Exception("Error occurred in the UI. Failing gracefully."));
+        Bukkit.getLogger().log(Level.WARNING, "[GlowExample] Error occurred in the UI. Failing gracefully.", new Exception(String.format(message, args)));
     }
 }

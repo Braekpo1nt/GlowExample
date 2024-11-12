@@ -9,24 +9,28 @@ import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import lombok.Getter;
 import org.braekpo1nt.glowexample.commands.GlowCommand;
 import org.braekpo1nt.glowexample.listeners.GlowListener;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 
-public final class GlowExample extends JavaPlugin {
+public final class GlowExample extends JavaPlugin implements Listener {
     
+    @Getter
     private final WhoSeesWho whoSeesWho = new WhoSeesWho();
-    
-    public WhoSeesWho getWhoSeesWho() {
-        return whoSeesWho;
-    }
+    private final GlowManager glowManager = new GlowManager();
     
     @Override
     public void onLoad() {
@@ -44,8 +48,13 @@ public final class GlowExample extends JavaPlugin {
          * 
          * you can also unregister them
          */
-        PacketEvents.getAPI().getEventManager().registerListener(new GlowListener(this), PacketListenerPriority.NORMAL);
+//        PacketEvents.getAPI().getEventManager().registerListener(new GlowListener(this), PacketListenerPriority.NORMAL);
         PacketEvents.getAPI().init();
+        getServer().getPluginManager().registerEvents(this, this);
+        glowManager.start();
+        for (Player player : getServer().getOnlinePlayers()) {
+            glowManager.addPlayer(player);
+        }
         
         LifecycleEventManager<Plugin> lcManager = this.getLifecycleManager();
         lcManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -54,23 +63,78 @@ public final class GlowExample extends JavaPlugin {
         });
     }
     
-    @Override
-    public void onDisable() {
-        Collection<? extends Player> onlinePlayers = getServer().getOnlinePlayers();
-        for (Player viewer : onlinePlayers) {
-            for (Player target : onlinePlayers) {
-                if (whoSeesWho.canSee(viewer.getUniqueId(), target.getUniqueId())) {
-                    whoSeesWho.hide(viewer.getUniqueId(), target.getUniqueId());
-                    byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, false);
-                    WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
-                            target.getEntityId(),
-                            Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))
-                    );
-                    PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
-                    getLogger().info(String.format("Reset glow status for %s viewing %s", viewer.getName(), target.getName()));
-                }
+    public void showGlowing(UUID viewerUUID, UUID targetUUID) {
+        boolean changed = whoSeesWho.show(viewerUUID, targetUUID);
+        if (changed) {
+            glowManager.showGlowing(viewerUUID, targetUUID);
+        }
+//        if (changed) {
+//            byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, true);
+//            WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
+//                    target.getEntityId(),
+//                    Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))
+//            );
+//            PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+//        }
+    }
+    
+    public void hideGlowing(UUID viewerUUID, UUID targetUUID) {
+        boolean changed = whoSeesWho.hide(viewerUUID, targetUUID);
+        if (changed) {
+            glowManager.hideGlowing(viewerUUID, targetUUID);
+        }
+//        if (changed) {
+//            byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, false);
+//            WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
+//                    target.getEntityId(),
+//                    Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))
+//            );
+//            PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+//        }
+    }
+    
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        UUID joinedUUID = player.getUniqueId();
+        // in this example, all players are always contained in the glowManager
+        glowManager.addPlayer(player);
+        for (Player onlinePlayer : getServer().getOnlinePlayers()) {
+            UUID onlineUUID = onlinePlayer.getUniqueId();
+            if (whoSeesWho.canSee(joinedUUID, onlineUUID)) {
+                glowManager.showGlowing(joinedUUID, onlineUUID);
+            }
+            if (whoSeesWho.canSee(onlineUUID, joinedUUID)) {
+                glowManager.showGlowing(onlineUUID, joinedUUID);
             }
         }
+    }
+    
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        // in this example all players are always contained in the glowManager
+        glowManager.removePlayer(player);
+    }
+    
+    @Override
+    public void onDisable() {
+//        Collection<? extends Player> onlinePlayers = getServer().getOnlinePlayers();
+//        for (Player viewer : onlinePlayers) {
+//            for (Player target : onlinePlayers) {
+//                if (whoSeesWho.canSee(viewer.getUniqueId(), target.getUniqueId())) {
+//                    whoSeesWho.hide(viewer.getUniqueId(), target.getUniqueId());
+//                    byte trueEntityDataByte = GlowExample.getTrueEntityDataByte(target, false);
+//                    WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(
+//                            target.getEntityId(),
+//                            Collections.singletonList(new EntityData(0, EntityDataTypes.BYTE, trueEntityDataByte))
+//                    );
+//                    PacketEvents.getAPI().getPlayerManager().sendPacket(viewer, packet);
+//                    getLogger().info(String.format("Reset glow status for %s viewing %s", viewer.getName(), target.getName()));
+//                }
+//            }
+//        }
+        glowManager.stop();
         PacketEvents.getAPI().terminate();
     }
     
