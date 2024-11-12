@@ -48,7 +48,7 @@ public class GlowManager implements PacketListener {
     }
     
     public void stop() {
-//        PacketEvents.getAPI().getEventManager().unregisterListener(this);
+        PacketEvents.getAPI().getEventManager().unregisterListener(this.asAbstract(PacketListenerPriority.NORMAL));
         for (PlayerData playerData : playerDatas.values()) {
             Player target = playerData.getPlayer();
             List<EntityData> entityMetadata = getEntityMetadata(target, false);
@@ -200,6 +200,10 @@ public class GlowManager implements PacketListener {
     }
     
     
+    @Override
+    public PacketListenerAbstract asAbstract(PacketListenerPriority priority) {
+        return PacketListener.super.asAbstract(priority);
+    }
     
     @Override
     public void onPacketSend(PacketSendEvent event) {
@@ -220,17 +224,20 @@ public class GlowManager implements PacketListener {
                 // if the viewer can't see the target's glow effect, then do not proceed
                 return;
             }
-            // at this point, we're making changes to the packet, so mark it to be re-encoded
             List<EntityData> entityMetadata = packet.getEntityMetadata();
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
-            if (baseEntityData != null) {
-                event.markForReEncode(true);
-                // if the base entity data is included in this packet, 
-                // we need to make sure that the "glowing" flag is set to true
-                byte flags = (byte) baseEntityData.getValue();
-                flags |= (byte) 0x40;
-                baseEntityData.setValue(flags);
+            if (baseEntityData == null) {
+                // if this packet isn't modifying the base entity data (index 0)
+                // then we don't need to modify the glowing flag
+                return;
             }
+            // at this point, we're making changes to the packet, so mark it to be re-encoded
+            event.markForReEncode(true);
+            // if the base entity data is included in this packet, 
+            // we need to make sure that the "glowing" flag is set to true
+            byte flags = (byte) baseEntityData.getValue();
+            flags |= (byte) 0x40;
+            baseEntityData.setValue(flags);
         }
     }
     
