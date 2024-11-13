@@ -23,7 +23,7 @@ public final class GlowExample extends JavaPlugin implements Listener {
     
     @Getter
     private final WhoSeesWho whoSeesWho = new WhoSeesWho();
-    private final GlowManager glowManager = new GlowManager(this.getLogger());
+    private final GlowManager glowManager = new GlowManager(this);
     
     @Override
     public void onLoad() {
@@ -63,8 +63,12 @@ public final class GlowExample extends JavaPlugin implements Listener {
     }
     
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public void playerJoinEvent(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        onPlayerJoin(player);
+    }
+    
+    private void onPlayerJoin(Player player) {
         UUID joinedUUID = player.getUniqueId();
         // in this example, all players are always contained in the glowManager
         glowManager.addPlayer(player);
@@ -138,5 +142,9 @@ public final class GlowExample extends JavaPlugin implements Listener {
         }
         
         return flags;
+    }
+    
+    public static byte getTrueSkinDisplayByte(Player player) {
+        return (byte) 127;
     }
 }
