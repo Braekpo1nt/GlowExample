@@ -8,6 +8,9 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -27,8 +30,10 @@ public class GlowManager extends SimplePacketListenerAbstract {
         this.logger = plugin.getLogger();
     }
     
-    @Data
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     private static class PlayerData {
+        @Getter
         private final Player player;
         /**
          * UUIDs of entities which this player should appear to glow to
@@ -40,6 +45,48 @@ public class GlowManager extends SimplePacketListenerAbstract {
         private final Set<UUID> targets = new HashSet<>();
         // TODO: add method to do this in tandem
         private final Set<UUID> initiallyUpdatedTargets = new HashSet<>();
+        
+        public void addViewer(UUID viewer) {
+            viewers.add(viewer);
+        }
+        
+        public void removeViewer(UUID viewer) {
+            viewers.remove(viewer);
+        }
+        
+        public boolean canBeSeen(UUID viewer) {
+            return viewers.contains(viewer);
+        }
+        
+        public Set<UUID> getViewersList() {
+            return viewers;
+        }
+        
+        public void addTarget(UUID target) {
+            targets.add(target);
+        }
+        
+        public void removeTarget(UUID target) {
+            targets.remove(target);
+            initiallyUpdatedTargets.remove(target);
+        }
+        
+        public Set<UUID> getTargetsList() {
+            return targets;
+        }
+        
+        public boolean canSee(UUID target) {
+            return targets.contains(target);
+        }
+        
+        public boolean requiresUpdate(UUID target) {
+            return !initiallyUpdatedTargets.contains(target);
+        }
+        
+        public void initialUpdate(UUID target) {
+            initiallyUpdatedTargets.add(target);
+        }
+        
     }
     
     /**
@@ -58,7 +105,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
         for (PlayerData playerData : playerDatas.values()) {
             Player target = playerData.getPlayer();
             List<EntityData> entityMetadata = getEntityMetadata(target, false);
-            for (UUID viewerUUID : playerData.getViewers()) {
+            for (UUID viewerUUID : playerData.getViewersList()) {
                 Player viewer = playerDatas.get(viewerUUID).getPlayer();
                 sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
             }
@@ -121,7 +168,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
             return;
         }
         
-        if (viewerPlayerData.getTargets().contains(targetUUID)) {
+        if (viewerPlayerData.canSee(targetUUID)) {
             logUIError("Viewer with UUID %s can already see target with UUID %s glowing", viewerUUID, targetUUID);
             return;
         }
@@ -129,8 +176,8 @@ public class GlowManager extends SimplePacketListenerAbstract {
         
         Player target = targetPlayerData.getPlayer();
         Player viewer = viewerPlayerData.getPlayer();
-        viewerPlayerData.getTargets().add(targetUUID);
-        targetPlayerData.getViewers().add(viewerUUID);
+        viewerPlayerData.addTarget(targetUUID);
+        targetPlayerData.addViewer(viewerUUID);
         
         List<EntityData> entityMetadata = getEntityMetadata(target, true);
         entityMetadata = new ArrayList<>(entityMetadata);
@@ -158,7 +205,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
             return;
         }
         
-        if (!viewerPlayerData.getTargets().contains(targetUUID)) {
+        if (!viewerPlayerData.canSee(targetUUID)) {
             logUIError("Viewer with UUID %s doesn't see target with UUID %s glowing", viewerUUID, targetUUID);
             return;
         }
@@ -166,9 +213,8 @@ public class GlowManager extends SimplePacketListenerAbstract {
         
         Player target = targetPlayerData.getPlayer();
         Player viewer = viewerPlayerData.getPlayer();
-        viewerPlayerData.getTargets().remove(targetUUID);
-        viewerPlayerData.getInitiallyUpdatedTargets().remove(targetUUID);
-        targetPlayerData.getViewers().remove(viewerUUID);
+        viewerPlayerData.removeTarget(targetUUID);
+        targetPlayerData.removeViewer(viewerUUID);
         
         List<EntityData> entityMetadata = getEntityMetadata(target, false);
         sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
@@ -192,20 +238,19 @@ public class GlowManager extends SimplePacketListenerAbstract {
         // removed player should no longer glow. iterate through viewers
         // and update their packets:
         UUID removedUUID = removedPlayer.getUniqueId();
-        for (UUID viewerUUID : removedPlayerData.getViewers()) {
+        for (UUID viewerUUID : removedPlayerData.getViewersList()) {
             PlayerData viewerPlayerData = playerDatas.get(viewerUUID);
             Player viewer = viewerPlayerData.getPlayer();
-            viewerPlayerData.getTargets().remove(removedUUID);
-            viewerPlayerData.getInitiallyUpdatedTargets().remove(removedUUID);
+            viewerPlayerData.removeTarget(removedUUID);
             sendGlowingPacket(viewer, removedPlayer.getEntityId(), removedPlayerMetadata);
         }
         
         // removed player should no longer see glowing. iterate through targets
         // and update their packets:
-        for (UUID targetUUID : removedPlayerData.getTargets()) {
+        for (UUID targetUUID : removedPlayerData.getTargetsList()) {
             PlayerData targetPlayerData = playerDatas.get(targetUUID);
             Player target = targetPlayerData.getPlayer();
-            targetPlayerData.getViewers().remove(removedUUID);
+            targetPlayerData.removeViewer(removedUUID);
             List<EntityData> targetMetadata = getEntityMetadata(target, false);
             sendGlowingPacket(removedPlayer, target.getEntityId(), targetMetadata);
         }
@@ -230,7 +275,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
                 logIfPlayer(player, entityId, "entityId %s doesn't have a UUID mapping", entityId);
                 return;
             }
-            if (!viewerPlayerData.getTargets().contains(targetUUID)) {
+            if (!viewerPlayerData.canSee(targetUUID)) {
                 // if the viewer can't see the target's glow effect, then do not proceed
                 logIfPlayer(player, entityId, "%s can't see %d", player.getName(), entityId);
                 return;
@@ -238,17 +283,16 @@ public class GlowManager extends SimplePacketListenerAbstract {
             List<EntityData> entityMetadata = packet.getEntityMetadata();
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
             if (baseEntityData == null) {
-                // if this packet isn't modifying the base entity data (index 0)
-                // then we don't need to modify the glowing flag
-                if (viewerPlayerData.getInitiallyUpdatedTargets().contains(targetUUID)) {
-                    logIfPlayer(player, entityId, "Initially updated");
-                    return;
+                if (viewerPlayerData.requiresUpdate(targetUUID)) {
+                    event.markForReEncode(true);
+                    //TODO: include true byte data
+                    entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
+                    viewerPlayerData.initialUpdate(targetUUID);
+                    logIfPlayer(player, entityId, "required initial update");
                 }
-                event.markForReEncode(true);
-                //TODO: include true byte data
-                entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
-                viewerPlayerData.getInitiallyUpdatedTargets().add(targetUUID);
-                logIfPlayer(player, entityId, "required initial update");
+                else {
+                    logIfPlayer(player, entityId, "no update needed");
+                }
                 return;
             }
             // at this point, we're making changes to the packet, so mark it to be re-encoded
