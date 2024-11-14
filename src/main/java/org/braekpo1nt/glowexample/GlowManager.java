@@ -43,7 +43,24 @@ public class GlowManager extends SimplePacketListenerAbstract {
          * UUIDs of entities that should appear to glow to this player
          */
         private final Set<UUID> targets = new HashSet<>();
-        // TODO: add method to do this in tandem
+        /**
+         * This has a very particular use. When players first log in, the ENTITY_METADATA 
+         * packet send automatically by the server does not contain the 0-index byte 
+         * data (the glowing information). Thus, the default behavior of 
+         * {@link #onPacketPlaySend(PacketPlaySendEvent)} is to ignore the packet. 
+         * However, this results in a player who should be glowing, but is not. 
+         * If the player crouches (or otherwise updates their base "Entity" metadata) 
+         * then they start glowing. 
+         * <br>
+         * Desired behavior: Players log in and are glowing to their viewers
+         * Actual behavior: Players log in and don't glow until they update their 
+         * entity data (crouch, sprint, swim, fly with elytra, etc.)
+         * <br>
+         * Solution: if {@link #onPacketPlaySend(PacketPlaySendEvent)} recieves an 
+         * ENTITY_METADATA packet for a given target, it checks to see if the viewer's 
+         * PlayerData.requiresInitialUpdate(targetUUID) is true. If so, it sends a 
+         * special update to ensure the player is glowing. 
+         */
         private final Set<UUID> initiallyUpdatedTargets = new HashSet<>();
         
         public void addViewer(UUID viewer) {
