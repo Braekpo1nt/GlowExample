@@ -317,10 +317,21 @@ public class GlowManager extends SimplePacketListenerAbstract {
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
             if (baseEntityData == null) {
                 if (viewerPlayerData.requiresInitialUpdate(targetUUID)) {
-                    event.markForReEncode(true);
-                    //TODO: include true byte data
-                    entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
+                    // The cheaper option of just modifying this packet, might cause inconsistencies (i.e. someone on fire would appear as not)
+//                    event.markForReEncode(true);
+//                    entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
+//                    viewerPlayerData.initialUpdate(targetUUID);
+                    
                     viewerPlayerData.initialUpdate(targetUUID);
+                    PlayerData targetPlayerData = playerDatas.get(targetUUID);
+                    if (targetPlayerData == null) {
+                        // this should never happen, if it does something is wrong
+                        return;
+                    }
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        List<EntityData> initialUpdateMetadata = getEntityMetadata(targetPlayerData.getPlayer(), true);
+                        sendGlowingPacket(viewerPlayerData.getPlayer(), entityId, initialUpdateMetadata);
+                    });
                     logIfPlayer(player, entityId, "required initial update");
                 }
                 else {
