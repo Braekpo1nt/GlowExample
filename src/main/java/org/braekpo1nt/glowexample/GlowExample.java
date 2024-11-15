@@ -144,12 +144,4 @@ public final class GlowExample extends JavaPlugin implements Listener {
         return flags;
     }
     
-    /**
-     * not truly complete
-     * @param player the player to get the data of
-     * @return 127 as a byte
-     */
-    public static byte getTrueSkinDisplayByte(Player player) {
-        return (byte) 127;
-    }
 }
