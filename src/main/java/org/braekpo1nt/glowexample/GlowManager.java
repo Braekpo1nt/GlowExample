@@ -247,9 +247,6 @@ public class GlowManager extends SimplePacketListenerAbstract {
         targetPlayerData.addViewer(viewerUUID);
         
         List<EntityData> entityMetadata = getEntityMetadata(target, true);
-        entityMetadata = new ArrayList<>(entityMetadata);
-        entityMetadata.add(new EntityData(17, EntityDataTypes.BYTE, GlowExample.getTrueSkinDisplayByte(target)));
-        entityMetadata.add(new EntityData(9, EntityDataTypes.FLOAT, ((float) target.getHealth())));
         sendGlowingPacket(viewer, target.getEntityId(), entityMetadata);
     }
     
