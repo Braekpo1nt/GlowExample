@@ -7,7 +7,6 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -96,11 +95,28 @@ public class GlowManager extends SimplePacketListenerAbstract {
             return targets.contains(target);
         }
         
-        public boolean requiresUpdate(UUID target) {
+        /**
+         * Can be thought of as "is this the first time this viewer is
+         * viewing this target?"
+         * 
+         * @param target
+         * @return true if this target requires an initial update, false otherwise
+         */
+        public boolean requiresInitialUpdate(UUID target) {
             return !initiallyUpdatedTargets.contains(target);
         }
         
+        /**
+         * Mark that this target has been initialized for this viewer. Successive calls
+         * to {@link #requiresInitialUpdate(UUID)} after this will return false, until
+         * the target is removed. 
+         * @param target a target that this viewer can see. If this target is not visible
+         *               to this viewer, nothing happens.
+         */
         public void initialUpdate(UUID target) {
+            if (!targets.contains(target)) {
+                return;
+            }
             initiallyUpdatedTargets.add(target);
         }
         
@@ -300,7 +316,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
             List<EntityData> entityMetadata = packet.getEntityMetadata();
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
             if (baseEntityData == null) {
-                if (viewerPlayerData.requiresUpdate(targetUUID)) {
+                if (viewerPlayerData.requiresInitialUpdate(targetUUID)) {
                     event.markForReEncode(true);
                     //TODO: include true byte data
                     entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
