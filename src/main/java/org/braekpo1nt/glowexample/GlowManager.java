@@ -6,9 +6,7 @@ import com.github.retrooper.packetevents.event.simple.PacketPlaySendEvent;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityStatus;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -46,26 +44,6 @@ public class GlowManager extends SimplePacketListenerAbstract {
          * UUIDs of entities that should appear to glow to this player
          */
         private final Set<UUID> targets = new HashSet<>();
-        /**
-         * This has a very particular use. When players first log in, the ENTITY_METADATA 
-         * packet send automatically by the server does not contain the 0-index byte 
-         * data (the glowing information). Thus, the default behavior of 
-         * {@link #onPacketPlaySend(PacketPlaySendEvent)} is to ignore the packet. 
-         * However, this results in a player who should be glowing, but is not. 
-         * If the player crouches (or otherwise updates their base "Entity" metadata) 
-         * then they start glowing. 
-         * <br>
-         * Desired behavior: Players log in and are glowing to their viewers
-         * Actual behavior: Players log in and don't glow until they update their 
-         * entity data (crouch, sprint, swim, fly with elytra, etc.)
-         * <br>
-         * Solution: if {@link #onPacketPlaySend(PacketPlaySendEvent)} recieves an 
-         * ENTITY_METADATA packet for a given target, it checks to see if the viewer's 
-         * PlayerData.requiresInitialUpdate(targetUUID) is true. If so, it sends a 
-         * special update to ensure the player is glowing. 
-         */
-        private final Set<UUID> initiallyUpdatedTargets = new HashSet<>();
-        
         /**
          * Add a viewer who should see this target as glowing
          * @param viewer the viewer to add
@@ -108,13 +86,11 @@ public class GlowManager extends SimplePacketListenerAbstract {
         }
         
         /**
-         * removes the given target from this viewer. This also un-marks their initial update,
-         * so that if they are added again they must send their initial update.
+         * removes the given target from this viewer.
          * @param target the target to remove
          */
         public void removeTarget(UUID target) {
             targets.remove(target);
-            initiallyUpdatedTargets.remove(target);
         }
         
         /**
@@ -130,31 +106,6 @@ public class GlowManager extends SimplePacketListenerAbstract {
          */
         public boolean canSee(UUID target) {
             return targets.contains(target);
-        }
-        
-        /**
-         * Can be thought of as "is this the first time this viewer is
-         * viewing this target?"
-         * 
-         * @param target the target
-         * @return true if this target requires an initial update, false otherwise
-         */
-        public boolean requiresInitialUpdate(UUID target) {
-            return !initiallyUpdatedTargets.contains(target);
-        }
-        
-        /**
-         * Mark that this target has been initialized for this viewer. Successive calls
-         * to {@link #requiresInitialUpdate(UUID)} after this will return false, until
-         * the target is removed. 
-         * @param target a target that this viewer can see. If this target is not visible
-         *               to this viewer, nothing happens.
-         */
-        public void initialUpdate(UUID target) {
-            if (!targets.contains(target)) {
-                return;
-            }
-            initiallyUpdatedTargets.add(target);
         }
         
     }
@@ -350,27 +301,6 @@ public class GlowManager extends SimplePacketListenerAbstract {
             List<EntityData> entityMetadata = packet.getEntityMetadata();
             EntityData baseEntityData = entityMetadata.stream().filter(entityData -> entityData.getIndex() == 0 && entityData.getType() == EntityDataTypes.BYTE).findFirst().orElse(null);
             if (baseEntityData == null) {
-                if (viewerPlayerData.requiresInitialUpdate(targetUUID)) {
-                    // The cheaper option of just modifying this packet, might cause inconsistencies (i.e. someone on fire would appear as not)
-//                    event.markForReEncode(true);
-//                    entityMetadata.add(new EntityData(0, EntityDataTypes.BYTE, (byte) 0x40));
-//                    viewerPlayerData.initialUpdate(targetUUID);
-                    
-                    viewerPlayerData.initialUpdate(targetUUID);
-                    PlayerData targetPlayerData = playerDatas.get(targetUUID);
-                    if (targetPlayerData == null) {
-                        // this should never happen, if it does something is wrong
-                        return;
-                    }
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        List<EntityData> initialUpdateMetadata = getEntityMetadata(targetPlayerData.getPlayer(), true);
-                        sendGlowingPacket(viewerPlayerData.getPlayer(), entityId, initialUpdateMetadata);
-                    });
-                    logIfPlayer(player, entityId, "required initial update");
-                }
-                else {
-                    logIfPlayer(player, entityId, "no update needed");
-                }
                 return;
             }
             // at this point, we're making changes to the packet, so mark it to be re-encoded
