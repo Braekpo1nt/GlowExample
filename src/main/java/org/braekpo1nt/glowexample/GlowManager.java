@@ -6,7 +6,10 @@ import com.github.retrooper.packetevents.event.simple.PacketPlaySendEvent;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityStatus;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -378,6 +381,38 @@ public class GlowManager extends SimplePacketListenerAbstract {
             flags |= (byte) 0x40;
             baseEntityData.setValue(flags);
             logger.info("glowing packet modified");
+        }
+        if (event.getPacketType().equals(PacketType.Play.Server.SPAWN_ENTITY)) {
+            UUID viewerUUID = event.getUser().getUUID();
+            PlayerData viewerPlayerData = playerDatas.get(viewerUUID);
+            if (viewerPlayerData == null) {
+                // if the receiver of the packet is not in this manager, then do not proceed
+                return;
+            }
+            WrapperPlayServerSpawnEntity packet = new WrapperPlayServerSpawnEntity(event);
+            int entityId = packet.getEntityId();
+            Player player = event.getPlayer();
+            UUID targetUUID = mapper.get(entityId);
+            if (targetUUID == null) {
+                // if the packet entity is not in the mapper, then it's a player in this manager, and we don't need to proceed
+                logIfPlayer(player, entityId, "entityId %s doesn't have a UUID mapping", entityId);
+                return;
+            }
+            if (!viewerPlayerData.canSee(targetUUID)) {
+                // if the viewer can't see the target's glow effect, then do not proceed
+                logIfPlayer(player, entityId, "%s can't see %d", player.getName(), entityId);
+                return;
+            }
+            PlayerData targetPlayerData = playerDatas.get(targetUUID);
+            if (targetPlayerData == null) {
+                // this should never happen, if it does something is wrong
+                return;
+            }
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                List<EntityData> initialUpdateMetadata = getEntityMetadata(targetPlayerData.getPlayer(), true);
+                sendGlowingPacket(viewerPlayerData.getPlayer(), entityId, initialUpdateMetadata);
+                logger.info("spawn player packet triggered glow packet");
+            });
         }
     }
     
