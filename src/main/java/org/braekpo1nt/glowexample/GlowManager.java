@@ -62,35 +62,68 @@ public class GlowManager extends SimplePacketListenerAbstract {
          */
         private final Set<UUID> initiallyUpdatedTargets = new HashSet<>();
         
+        /**
+         * Add a viewer who should see this target as glowing
+         * @param viewer the viewer to add
+         */
         public void addViewer(UUID viewer) {
             viewers.add(viewer);
         }
         
+        /**
+         * Remove a viewer who previously saw this target glowing, and should
+         * not anymore
+         * @param viewer the viewer to remove
+         */
         public void removeViewer(UUID viewer) {
             viewers.remove(viewer);
         }
         
+        /**
+         * Whether this @param viewer the viewer who may see this glowing
+         * @return true if this target can be seen glowing by the given viewer,
+         * false otherwise
+         */
         public boolean canBeSeen(UUID viewer) {
             return viewers.contains(viewer);
         }
         
+        /**
+         * @return the UUIDs of the viewers who can see this target glowing
+         */
         public Set<UUID> getViewersList() {
             return viewers;
         }
         
+        /**
+         * Add a target that this viewer should see glowing
+         * @param target the target
+         */
         public void addTarget(UUID target) {
             targets.add(target);
         }
         
+        /**
+         * removes the given target from this viewer. This also un-marks their initial update,
+         * so that if they are added again they must send their initial update.
+         * @param target the target to remove
+         */
         public void removeTarget(UUID target) {
             targets.remove(target);
             initiallyUpdatedTargets.remove(target);
         }
         
+        /**
+         * @return the UUIDs of the targets this viewer should see glowing
+         */
         public Set<UUID> getTargetsList() {
             return targets;
         }
         
+        /**
+         * @param target the target who may be glowing to this viewer
+         * @return true if this viewer can see the given target glowing
+         */
         public boolean canSee(UUID target) {
             return targets.contains(target);
         }
