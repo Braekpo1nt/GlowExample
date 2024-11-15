@@ -32,6 +32,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
     @RequiredArgsConstructor
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     private static class PlayerData {
+        @EqualsAndHashCode.Include
         @Getter
         private final Player player;
         /**
@@ -132,7 +133,7 @@ public class GlowManager extends SimplePacketListenerAbstract {
          * Can be thought of as "is this the first time this viewer is
          * viewing this target?"
          * 
-         * @param target
+         * @param target the target
          * @return true if this target requires an initial update, false otherwise
          */
         public boolean requiresInitialUpdate(UUID target) {
